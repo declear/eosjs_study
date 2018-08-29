@@ -19,10 +19,13 @@ const eos = Eos(config);
 
 const EOS_KNIGHTS_IO = "eosknightsio";
 
+if(process.argv.length <= 2)
+    return;
+
 // input yours
-const ACCOUNT = 'youraccount1';
-const RANGE_START_POS = 0;
-const RANGE_END_POS = 1000;
+const ACCOUNT = process.argv[2];
+const POS = 0;
+const OFFSET = 499;
 
 function findTransfer(actions) {
     var sendEosTrx = [], recvEosTrx = [];
@@ -80,9 +83,9 @@ function procResponse(response) {
 }
 
 console.log("Account : " + ACCOUNT);
-console.log("Number of actions(req) : " + (RANGE_END_POS - RANGE_START_POS + 1));
+console.log("Number of actions(req) : " + (OFFSET - POS + 1));
 
-eos.getActions(ACCOUNT, RANGE_START_POS, RANGE_END_POS)
+eos.getActions(ACCOUNT, POS, OFFSET)
     .then(response => procResponse(response))      
     .catch(error => console.error(error));
     
