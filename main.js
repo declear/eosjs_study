@@ -9,7 +9,8 @@ const config = {
     debug: false,
     sign: true,
     // mainNet bp endpoint    
-    httpEndpoint: 'https://eos.greymass.com:443',    
+    //httpEndpoint: 'https://eos.greymass.com:443',    
+    httpEndpoint: 'https://api1.eosasia.one:443',
     // mainNet chainId
     chainId: 'aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906',
 };
@@ -23,9 +24,9 @@ if(process.argv.length <= 2) {
 
 const EOS_KNIGHTS_IO = "eosknightsio";
 const POS = 0;
-const OFFSET = 499;
-const ENABLE_ROUND = true;
-const ENABLE_TOTAL = true;
+const OFFSET = 199;
+const ENABLE_ROUND_OFF = true;
+const ENABLE_PRINT_TOTAL = true;
 
 // input yours accounts
 var ACCOUNTS = [];
@@ -38,10 +39,14 @@ var totalSendedEos = 0.0, totalReceivedEos = 0.0;
 var numLastActions = 0;
 
 function findTransfer(actions, account) {
-    var sendEosData = [], recvEosData = [];
-    var action_digest_unique = [];
+    var sendEosData = [], recvEosData = [];    
+    var trx_id_unique = [];
+
     actions.forEach(action => {
-        if(action_digest_unique.includes(action.action_trace.receipt.act_digest))
+        if(action.action_trace.act.name != "transfer")
+            return;
+        
+        if(trx_id_unique.includes(action.action_trace.trx_id))
             return;
 
         to = action.action_trace.act.data.to;        
@@ -49,12 +54,12 @@ function findTransfer(actions, account) {
 
         if(to == EOS_KNIGHTS_IO && from == account) {
             sendEosData.push(action.action_trace.act.data);
+            trx_id_unique.push(action.action_trace.trx_id);
         }
         else if(to == account && from == EOS_KNIGHTS_IO) {
             recvEosData.push(action.action_trace.act.data);
+            trx_id_unique.push(action.action_trace.trx_id);
         }
-
-        action_digest_unique.push(action.action_trace.receipt.act_digest);
     });
     return [sendEosData, recvEosData];    
 }
@@ -63,7 +68,7 @@ function calculateEos(sendList, receiveList) {
     var sendedEos = 0.0, receivedEos = 0.0;
     //console.log("The num of action [send eos] : " + sendList.length);
     sendList.forEach(data => {
-        if(data.quantity == undefined || typeof(data.quantity) != "string")
+        if(data == undefined || data.quantity == undefined || typeof(data.quantity) != "string")
             return;
 
         //console.log(data.quantity);
@@ -72,7 +77,7 @@ function calculateEos(sendList, receiveList) {
 
     //console.log("The num of action [receive eos] : " + receiveList.length);
     receiveList.forEach(data => {
-        if(data.quantity == undefined || typeof(data.quantity) != "string")
+        if(data == undefined || data.quantity == undefined || typeof(data.quantity) != "string")
             return;
 
         //console.log(data.quantity);
@@ -121,14 +126,14 @@ async function splitExecution(a, p, o) {
         curPos += OFFSET + 1;        
     }
 
-    if(ENABLE_ROUND) {
+    if(ENABLE_ROUND_OFF) {
         accountSendedEos = Math.round(accountSendedEos * 100) / 100;
         accountReceivedEos = Math.round(accountReceivedEos * 100) / 100;
     }
 
     console.log("account : " + a + " [" + accountSendedEos + "]" + "[" + accountReceivedEos + "]");
 
-    if(ENABLE_TOTAL) {
+    if(ENABLE_PRINT_TOTAL) {
         totalSendedEos += accountSendedEos;
         totalReceivedEos += accountReceivedEos;
     }
@@ -143,7 +148,7 @@ async function start(a, p, o) {
         curAccountIdx++;        
     }
 
-    if(ENABLE_TOTAL) {
+    if(ENABLE_PRINT_TOTAL) {
         console.log("total : " + " [" + totalSendedEos + "]" + "[" + totalReceivedEos + "]");
     }
     console.log('THANK YOU. FOR EOS');
